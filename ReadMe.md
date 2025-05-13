@@ -1,8 +1,9 @@
 # Improved real-time hail damage estimates leveraging dense crowdsourced observations
 The scripts here reproduce the main results of the paper:
-Schmid T., Gebhart, V.,, Bresch D. N. (2025) Improved real-time hail damage estimates leveraging dense crowdsourced observations. Meteorological Applications, DOI to be added
+Schmid T., Gebhart, V., Bresch D. N. (2025) Improved real-time hail damage estimates leveraging dense crowdsourced observations. Meteorological Applications, DOI to be added
 
-Publication status: [in reviewe](https://doi.org/)
+Publication status: accepted
+<!-- Publication status: [accepted](https://doi.org/) -->
 
 Contact: [Timo Schmid](timo.schmid@usys.ethz.ch)
 
