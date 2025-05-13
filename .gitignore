@@ -1,0 +1,9 @@
+# Hidden Files
+.*
+!/.gitignore
+
+# Pycache
+**/__pycache__/
+
+#setup files locally created
+scClim.egg-info/
