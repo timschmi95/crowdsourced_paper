@@ -9,31 +9,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import copy
-from climada import CONFIG
 
 
-VARNAME_DICT = {'meshs':'MZC',
-                'MESHS':'MZC',
-                'POH':'BZC',
-                'poh':'BZC',
-                }
-UNIT_DICT = {'meshs':'mm',
-            'MESHS':'mm',
-            'MESHS_opt_corr':'mm',
-            'MESHS_20to23':'mm',
-            'MESH' : 'mm',
-            'POH':'%',
-            'poh':'%',
-            'crowd':'mm',
-            'crowdFiltered':'mm',
-            'E_kin':'J/m2',
-            'E_kinCC':'J/m2',
-            'MESHSdBZ':'mm',
-            'MESHSdBZ_p3':'mm',
-            'MESHS_4km':'mm',
-            'dBZ':'dBZ',
-            'VIL':'g/m2',
-            }
+
 CH_EXTENT = [5.8, 10.6, 45.7, 47.9]#x0 x1 y0 y1
 CH_EXTENT_EPSG2056 = (2485014.011782823, 2837016.892254034, 1075214.1686203221, 1299782.7670088513)
 ZRH_EXTENT = [8.35, 9, 47.15, 47.7]
@@ -43,62 +21,34 @@ SUB_CH_EXTENT_2056_TIGHT = (2.56e6, 2.71e6, 1.15e6,1.28e6)
 SUB_CH_EXTENT = (6.5, 9, 46.2, 47.8)
 CMAP_VIR = copy.copy(plt.cm.get_cmap('viridis'))
 CMAP_VIR.set_under('white',alpha=0)
-NE_BORDERS = (f"{str(CONFIG.local_data.data_dir)}/ch_shapefile/"
-              "ne_50m_admin_0_countries/ne_50m_admin_0_countries.shp")
 
 # Variable_dictionaries
 INT_RANGE_DICT = {
     'MESHS':    np.concatenate(([0],np.arange(20,100))),
-    'MESHS_4km':np.concatenate(([0],np.arange(20,100))),
-    'MESHS_opt_corr':np.concatenate(([0],np.arange(20,100))),
-    'MESHS_20to23':np.concatenate(([0],np.arange(20,100))),
-    'MESH':     np.arange(0,60,1),
-    'HKE':      np.arange(0,3001,40),
     'dBZ':      np.arange(45, 75, 0.5),
     'crowd':    np.arange(0, 70, 1),
     'crowdFiltered': np.arange(0, 70, 1),
     'POH':      np.arange(0, 100, 1),
-    'E_kin':    np.concatenate(([0],np.arange(60,1000,10))), #np.arange(0,1000,50),
     'E_kinCC':  np.arange(0,2000,50),
-    'MESHSdBZ': np.arange(0, 90, 2),
-    'MESHSdBZ_p3': np.arange(0, 90, 2),
-    'VIL':      np.concatenate(([0],np.arange(10,70))),
 }
 
 INT_LABEL_DICT = {
     'MESHS_4km': 'Intensity: MESHS [mm]',
-    'MESHSdBZ_p3': 'Intensity: MESHS (dBZ-scaled) [mm]',
-    'MESHSdBZ': 'Intensity: MESHS (dBZ-scaled) [mm]',
     'MESHS': 'Intensity: MESHS [mm]',
-    'MESHS_opt_corr': 'Intensity: MESHS (shifted) [mm]',
-    'MESHS_20to23': 'Intensity: MESHS [mm]',
-    'MESH': 'Intensity: MESH (North American) [mm]',
-    'HKE': 'Intensity: HKE (MESHS-derived) [J m$^{-2}$]',
     'dBZ': 'Intensity: Reflectivity [dBZ]',
     'crowdFiltered': 'Intensity: Crowd-sourced hail size [mm]',
     'crowd': 'Intensity: Crowd-sourced hail size [mm]',
     'POH': 'Intensity: Probability of hail [%]',
     'E_kinCC': 'Intensity: E$_{kin}$ [J m$^{-2}$]',
-    'E_kin': 'Intensity: E$_{kin}$ [J m$^{-2}$]',
-    'VIL': 'Intensity: VIL [g m$^{-2}$]',
 }
 
 CUT_OFF_DICT = {
     'MESHS':    60,
-    'MESHS_4km':60,
-    'MESHS_opt_corr':60,
-    'MESHS_20to23':60,
-    'MESH':     40,
-    'HKE':      2000,
     'dBZ':      65,
-    'crowd':    45, #50, #45,
+    'crowd':    45,
     'crowdFiltered': 45,
     'POH':      100,
-    'E_kin':    800,
     'E_kinCC':  800,
-    'MESHSdBZ': 60,
-    'MESHSdBZ_p3': 60,
-    'VIL':      55,
 }
 
 ID_COL_DICT = {
@@ -110,26 +60,6 @@ ID_COL_DICT = {
     'KGV':          'id_col'
 }
 
-#Plot extent: should be roughly square
-PLOT_EXTENT_DICT = { #x0 x1 y0 y1
-    'GVZ':          [8.3, 9, 47.1, 47.8],
-    '':             [8.3, 9, 47.1, 47.8],
-    'MFZrandom_':   [6, 10, 44.5, 48.5],
-    'GVL':          [7.85, 8.5,46.7,47.35],
-    'AGV':          [7.75, 8.45,47.05,47.65],
-    'GVB':          [6.9, 8.4,46.3,47.4],
-    'KGV':          [6.9, 9,46.2,48],
-}
-
-CANTON_DICT = {
-    'GVZ':          'Zürich',
-    '':             'Zürich', #GVZ is also called as '' only
-    'MFZrandom_':   None,
-    'GVL':          'Luzern',
-    'AGV':          'Aargau',
-    'GVB':          'Bern',
-    'KGV':          ['Zürich','Bern','Luzern','Aargau']
-}
 
 #Dictionary of windowsize for rolling window (in #steps)
 W_SIZE_DICT = {
@@ -185,126 +115,7 @@ BAUINDEX = pd.DataFrame(
     }
 )
 
-DATA_RANGE_DICT = {
-    'MESHS':    np.arange(2002,2023+1),
-    'MESHS_4km':np.arange(2002,2021+1),
-    'MESHS_opt_corr':np.arange(2002,2021+1),
-    'MESHS_20to23':np.arange(2020,2023+1),
-    'MESH':     np.arange(2013,2023+1),
-    'HKE':      np.arange(2002,2021+1),
-    'dBZ':      np.arange(2013,2021+1),
-    'crowd':    np.arange(2017, 2021+1),
-    'crowdFiltered': np.arange(2017, 2021+1),
-    'POH':      np.arange(2002,2023+1),
-    'E_kin':    np.arange(2013,2021+1),
-    'E_kinCC':  np.arange(2013,2021+1),
-    'MESHSdBZ': np.arange(2013,2021+1),
-    'MESHSdBZ_p3': np.arange(2013,2021+1),
-    'VIL':      np.arange(2013,2021+1),
 
-    #damage data
-    '': np.arange(2002,2021+1),
-    'GVZ': np.arange(2002,2021+1),
-    'GVL': np.arange(2002,2021+1),
-    'AGV': np.arange(2002,2021+1),
-    'GVB': np.arange(2002,2021+1),
-    'KGV': np.arange(2002,2021+1),
-    'KGV23': np.arange(2002,2023+1),
-    'KGV_nonExtreme': np.arange(2002,2021+1),
-    'KGV_1e5': np.arange(2002,2021+1),
-    'scaledKGV_': np.arange(2002,2021+1),
-    'gridKGV_': np.arange(2002,2021+1),
-    'MFZrandom_': np.arange(2017,2021+1),
-
-}
-
-DROP_DATES_DICT={'Weizen': ['ev_2017-08-01'],
-           'Gerste': ['ev_2017-07-08', 'ev_2017-08-01'],
-           'Raps': ['ev_2017-08-01'],
-           'Mais': [],
-           'Reben': [],
-           'Aepfel': []}
-
-FRACTION_INSURED_DICT ={'Weizen': 0.69,
-           'Gerste': 0.69,
-           'Raps': 0.69,
-           'Mais': 0.69,
-           'Reben': 0.43,
-           'Aepfel': 0.32}
-
-PRE_PROC_PARAM_DICT = {
-    7: {
-        'version_id' : 7,
-        'min_day' : -2, # maximum -2
-        'max_day' : 2, # maximum 2
-        'min_POH_diff' : 50, #min POH difference to change a date
-        'poh_level' : 10, #POH level for plausible hail damage
-        'buffer_km' : 5, #in km. buffer around POH level above
-        'delete_nonPOH_dmgs' : True, #wether to delete non-plausible damages
-        'use_likelihood' : False, #use boolean
-    },
-
-    #Version 7: equal to Version 7, but for data up to 2023
-    71: {
-        'version_id' : 71,
-        'min_day' : -2, # maximum -2
-        'max_day' : 2, # maximum 2
-        'min_POH_diff' : 50, #min POH difference to change a date
-        'poh_level' : 10, #POH level for plausible hail damage
-        'buffer_km' : 5, #in km. buffer around POH level above
-        'delete_nonPOH_dmgs' : True, #wether to delete non-plausible damages
-        'use_likelihood' : False, #use boolean
-    },
-
-    #Version 8: to be used for MFZrandom ONLY
-    8: {
-        'version_id' : 8,
-        'min_day' : -2, # maximum -2
-        'max_day' : 2, # maximum 2
-        'min_POH_diff' : None, #min POH difference to change a date: so date will never be changed based on local POH difference
-        'poh_level' : 10, #POH level for plausible hail damage
-        'buffer_km' : 50, #in km. buffer around POH level above
-        'delete_nonPOH_dmgs' : True, #wether to delete non-plausible damages
-        'use_likelihood' : False, #use boolean
-    },
-
-    #Version 9: to be used for MFZrandom ONLY, does not change any dates!
-    9: {
-        'version_id' : 9,
-        'min_day' : 0, # maximum -2
-        'max_day' : 0, # maximum 2
-        'min_POH_diff' : None, #min POH difference to change a date: so date will never be changed based on local POH difference
-        'poh_level' : 10, #POH level for plausible hail damage
-        'buffer_km' : 50, #in km. buffer around POH level above
-        'delete_nonPOH_dmgs' : False, #wether to delete non-plausible damages
-        'use_likelihood' : False, #use boolean
-    },
-
-    #Version 1: to be used for MFZrandom ONLY
-    #assigns likelyhood for each date, instead of boolean (possible hail = yes/no)
-    1: {
-        'version_id' : 1,
-        'min_day' : -2, # maximum -2
-        'max_day' : 2, # maximum 2
-        'min_POH_diff' : None, #min POH difference to change a date: so date will never be changed based on local POH difference
-        'poh_level' : 10, #POH level for plausible hail damage
-        'buffer_km' : 50, #in km. buffer around POH level above
-        'delete_nonPOH_dmgs' : True, #wether to delete non-plausible damages
-        'use_likelihood' : True, #wether to use likelihood instead of boolean
-    },
-    #Version 2: to be used for GESTAVO Buildings
-    #assigns likelyhood for each date, instead of boolean (possible hail = yes/no)
-    2: {
-        'version_id' : 2,
-        'min_day' : -2, # maximum -2
-        'max_day' : 2, # maximum 2
-        'min_POH_diff' : None, #min POH difference to change a date: so date will never be changed based on local POH difference
-        'poh_level' : 10, #POH level for plausible hail damage
-        'buffer_km' : 50, #in km. buffer around POH level above
-        'delete_nonPOH_dmgs' : True, #wether to delete non-plausible damages
-        'use_likelihood' : True, #wether to use likelihood instead of boolean
-    },
-}
 
 BAUJAHR_DICT = {
     '' : (0,2022),
@@ -312,10 +123,3 @@ BAUJAHR_DICT = {
     '1960-2002' : (1960,2002),
     'after2002' : (2003,2022)
 }
-
-CH_SEL_CANTONS = ["Aargau","Zürich","Bern","Luzern"]
-
-CH_CANTONS_LIST2 = ["Appenzell Ausserrhoden", "Appenzell Innerrhoden", "Basel-Landschaft", "Basel-Stadt",
-                   "Fribourg", "Genève", "Glarus", "Graubünden", "Jura", "Neuchâtel", "Nidwalden",
-                   "Obwalden", "Schaffhausen", "Schwyz", "Solothurn", "St. Gallen", "Thurgau", "Ticino", "Uri", "Valais",
-                   "Vaud", "Zug"]

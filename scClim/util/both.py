@@ -3,126 +3,14 @@
 Utility functions for both/all Subprojects
 """
 import datetime as dt
-import os
-
 import climada.util.coordinates as u_coord
 import geopandas as gpd
 import numpy as np
 import pandas as pd
 import xarray as xr
-from climada import CONFIG
-from scipy.signal import convolve
-from geopy.geocoders import Nominatim, Bing
-from geopy.extra.rate_limiter import RateLimiter
-from scipy.interpolate import griddata
-from scipy.ndimage import maximum_filter
+
 import matplotlib.pyplot as plt
-import shapely
-from pyproj import CRS
 
-
-
-import scClim.hail_climada as fct
-
-
-def reordered_legend(ax,order,**kwargs):
-    """reorder legend entries
-
-    Args:
-        ax (matplotlib.axes): axis
-        order (list): order of legend entries
-    """
-    handles, labels = ax.get_legend_handles_labels()
-    # new_handles = [handles[order.index(i)] for i in labels]
-    new_handles = [handles[idx] for idx in order]
-    new_labels = [labels[idx] for idx in order]
-    ax.legend(new_handles, new_labels, **kwargs)
-
-
-
-def numpy_ffill(arr):
-    '''Forward fill NaNs in 2D array along axis 1.'''
-    mask = np.isnan(arr)
-    idx = np.where(~mask,np.arange(mask.shape[1]),0)
-    np.maximum.accumulate(idx,axis=1, out=idx)
-    out = arr[np.arange(idx.shape[0])[:,None], idx]
-    return out
-
-
-def get_extent(proj_in, proj_out, extent):
-    """Get the extent in the desired projection
-
-    Args:
-        proj_in (ccrs.Projection): projection of the input extent
-        proj_out (ccrs.Projection): projection of the output extent
-        extent (tuple): extent in input coords (lon1, lon2, lat1, lat2)
-
-    Returns:
-        tuple: extent in output coords (x1, x2, y1, y2)
-    """
-
-    prj = proj_in #ccrs.Projection(proj_in)
-
-    extent_latlon = extent
-    # Define the corner points of the extent in latlon coordinates
-    # lat1, lon1, lat2, lon2 = extent_latlon
-    lon1, lon2, lat1, lat2 = extent_latlon
-
-    # Create an array of the corner points
-    corners = np.array([[lon1, lat1], [lon1, lat2], [lon2, lat1], [lon2, lat2]])
-
-    # Transform the corner points to the desired projection
-    transformed_corners = proj_out.transform_points(prj, corners[:, 0], corners[:, 1])
-
-    # Extract the transformed coordinates
-    x = transformed_corners[:, 0]
-    y = transformed_corners[:, 1]
-
-    # Get the minimum and maximum x and y values
-    min_x = np.min(x)
-    max_x = np.max(x)
-    min_y = np.min(y)
-    max_y = np.max(y)
-
-    # Return the extent in the desired projection
-    return min_x, max_x, min_y, max_y
-
-
-def interp2d_na(zs,method='linear',max_dist=None):
-    """interpolate 2d array with nan values
-
-    Args:
-        zs (np.array): 2d array
-        method (str, optional): interpolation method. Defaults to 'linear'.
-        max_dist (int, optional): max distance (in grid cells) to interpolate.
-
-    Returns:
-        np.array: filled array
-    """
-    x_indx, y_indx = np.meshgrid(np.arange(0, zs.shape[1]),
-                                np.arange(0, zs.shape[0]))
-
-    # mask all invalid values
-    zs_masked = np.ma.masked_invalid(zs)
-
-    # retrieve the valid, non-Nan, defined values
-    valid_xs = x_indx[~zs_masked.mask]
-    valid_ys = y_indx[~zs_masked.mask]
-    valid_zs = zs_masked[~zs_masked.mask]
-
-    # generate interpolated array of z-values
-    zs_interp = griddata((valid_xs, valid_ys), valid_zs.ravel(),
-                                    (x_indx, y_indx), method=method)
-
-    # mask all values outside of max_dist
-    #get distance to nearest valid point
-    if max_dist is not None:
-        k_size = 2*max_dist+1
-        kernel = np.fromfunction(lambda i,j: ((max_dist - i) ** 2 + (max_dist - j) ** 2)<=max_dist**2,(k_size,k_size)).astype(int)
-        zs_valid_distance = maximum_filter(~np.isnan(zs),footprint=kernel)#, size=max_dist)
-        zs_interp[zs_valid_distance==0] = np.nan
-
-    return zs_interp
 
 
 def add_imp_to_xr(imp,ds,xdim='chx',ydim='chy',varname='imp'):
@@ -158,29 +46,6 @@ def add_imp_to_xr(imp,ds,xdim='chx',ydim='chy',varname='imp'):
     return ds
 
 
-def geocode_df(df,address_column='address',geoloc_type='Nominatim'):
-
-    df_out = df.copy(deep=True)
-    if any(np.isin(['location','longitude','latitude'],df_out.columns)):
-        raise ValueError('columns location/longitude/latitude already exists')
-    #Creating an instance of Nominatim Class
-    if geoloc_type == 'Nominatim':
-        print(f'Estimated time: {df_out.shape[0]/60:.1f} min')
-        geolocator = Nominatim(user_agent="my_request")
-        #applying the rate limiter wrapper
-        geocode = RateLimiter(geolocator.geocode, min_delay_seconds=1)
-    elif geoloc_type == 'Bing':
-        if df_out.shape[0]>20000:
-            #so far used: 16k GVL, 16k AGV,
-            raise TimeoutError('Careful, only 1250000 requests for Bing allowed')
-        geolocator = Bing(api_key='Ane63svevZE2jf8bv_MGgLA03uVp6i52rRqg_Jy5iPtpK1qQ0Y1boR20rLz8-Fa_')
-        geocode = RateLimiter(geolocator.geocode, min_delay_seconds=0.0)
-
-    #Applying the method to pandas DataFrame
-    df_out['location'] = df_out[address_column].apply(geocode)
-    df_out['latitude'] = df_out['location'].apply(lambda x: x.latitude if x else None)
-    df_out['longitude'] = df_out['location'].apply(lambda x: x.longitude if x else None)
-    return df_out
 
 def assign_centroids_gdf(gdf, hazard, distance='euclidean',
                         threshold=u_coord.NEAREST_NEIGHBOR_THRESHOLD):
@@ -245,121 +110,7 @@ def assign_centroids_imp(imp,hazard,distance='euclidean',
     setattr(imp,f'centr_{str(haz_type)}' , gdf['centr_' + haz_type] )
 
 
-def npy_to_netcdf(npy_file,var):
 
-    #load example netcdf file with correct coords
-    nc_filepath = str(CONFIG.mch_nc_example)
-    ncfile = xr.open_dataset(nc_filepath)
-
-    if npy_file.endswith('.npy'):
-        arr = np.flip(np.load(npy_file),axis=[0])
-        #convert MESHS from cm to mm
-        if var in ['MZC','meshs']:
-            arr = arr*10
-        # arr = np.load(npy)
-        ds_out = xr.Dataset({var: (("chy","chx"),arr)},
-                        coords = ncfile.coords).drop('time')
-    elif os.path.isdir(npy_file):
-        npy_files = os.listdir(npy_file)
-        for file in npy_files:
-            timestamp = file.replace('%s_'%var,'').replace('.npy','')
-            arr = np.flip(np.load(os.path.join(npy_file,file)),axis=[0])
-            #convert MESHS from cm to mm
-            if var in ['MZC','meshs']:
-                arr = arr*10
-            # arr = np.load(npz)
-            ds = xr.Dataset({var: (("chy","chx"),arr)},
-                            coords = ncfile.coords).isel(time=0)
-            ds['time'] =dt.datetime.strptime(timestamp,"%Y%m%d%H%M%S")
-            if file == npy_files[0]:
-                ds_out = ds
-            else:
-                ds_out = xr.concat([ds_out,ds],dim='time')
-    else:
-        TypeError('npy_file is neither .npy file nor directory')
-    return ds_out
-
-def get_possible_hail(date, poh, haz_poh, extent, poh_thresh=80, buffer_km = 4,
-                      return_type='oneDay',get_likelihood=False):
-    """get all the location where hail is expected with, based on POH
-
-    Parameters
-    ----------
-    date : datetime
-        date in question
-    poh : xarray.DataArray
-        POH values
-    haz_poh : climada.hazard
-        hazard object based on the POH values from the poh DataArray
-    extent : list / array
-        [lon_min, lon_max, lat_min, lat_max]
-    poh_thresh : int
-        poh threshold
-    buffer_km : int
-        added buffer in km
-    return_type : str
-        'oneDay': returns hazard + DataArray of selected date
-        'all' : ignored 'date' and returns DataArray of all timesteps
-    get_likelihood : bool
-        if True, returns likelyhood of hail, based on POH and buffer_km.
-        To be used for MFZrandom only!
-        if False, return boolean for possible hail yes/no. Used for buildings
-
-    Returns
-    -------
-    da : xarray.DataArray, xarray.Dataset
-
-    """
-    k_size = buffer_km*2+1
-    center_idx = buffer_km
-    kernel = np.fromfunction(lambda i,j: ((center_idx - i) ** 2 + (center_idx - j) ** 2)<=buffer_km**2,(k_size,k_size)).astype(int)
-    if return_type == 'oneDay':
-        #calculate convolution of POH>threshold
-        # over_thresh = poh.sel(time=date) > poh_thresh
-        poh_sel = poh.sel(time=date)
-        if get_likelihood:
-            #here possible hail will return a likelihood based on the number of pixels with POH>threshold
-            possible_hail = convolve(poh_sel> poh_thresh,kernel,mode='same') / np.sum(kernel)
-        else: #here possible hail return a yes/no field of locations with possible hail
-            possible_hail = convolve(poh_sel> poh_thresh,kernel,mode='same') > 0
-        ds = poh_sel.to_dataset()
-        ds=ds.assign(possible_hail=(('chy','chx'),possible_hail))
-        ds=ds.expand_dims('time')
-        haz_sel = fct.hazard_from_radar(ds,varname='possible_hail', extent = extent)
-        #assert that shape is the same as haz_poh!
-        np.testing.assert_array_equal(haz_poh.centroids.lat,haz_sel.centroids.lat)
-        np.testing.assert_array_equal(haz_poh.centroids.lat,haz_sel.centroids.lat)
-        return haz_sel,ds.possible_hail
-    elif return_type == 'all':
-        for date_now in poh.time:
-            print(date_now.values)
-            poh_sel = poh.sel(time=date_now)
-            if get_likelihood:
-                #here possible hail will return a likelyhood based on the number of pixels with POH>threshold
-                possible_hail = convolve(poh_sel> poh_thresh,kernel,mode='same') / np.sum(kernel)
-            else: #here possible hail return a yes/no field of locations with possible hail
-                possible_hail = convolve(poh_sel> poh_thresh,kernel,mode='same') > 0
-            possible_hail = np.expand_dims(possible_hail,axis=0)
-            if date_now == poh.time[0]:
-                ph_all = possible_hail
-            else:
-                ph_all = np.concatenate([ph_all,possible_hail],axis=0)
-
-            # ds = poh_sel.to_dataset()
-            # ds=ds.assign(possible_hail=(('chy','chx'),possible_hail))
-            # ds=ds.expand_dims('time')
-        ds_PH = poh.copy(deep=True).to_dataset()
-        ds_PH=ds_PH.assign(possible_hail=(('time','chy','chx'),ph_all))
-        ds_PH=ds_PH.drop_vars('BZC')
-        np.testing.assert_array_equal(poh.lat,ds_PH.lat)
-        np.testing.assert_array_equal(poh.time,ds_PH.time)
-        return ds_PH
-
-def get_date_or_category(date,min_day,max_day,m2,m1,now,p1,p2,mode = 'date'):
-    raise Warning("Function is deprecated, use get_date instead")
-
-def get_date(in_array,date,index_day0,mode='date'):
-    raise Warning("Function is deprecated, use get_date from pre_process.py instead")
 
 def smooth_monotonic(x,y,plot=False):
     """
@@ -380,7 +131,7 @@ def smooth_monotonic(x,y,plot=False):
     # Monotone smoothing
     ws = np.zeros(N - 1)
 
-    for it in range(30):
+    for _ in range(30):
         Ws      = np.diag(ws * kp)
         mon_cof = np.linalg.solve(E + la * D3.T @ D3 + D1.T @ Ws @ D1, y)
         ws_new  = (D1 @ mon_cof < 0.0) * 1

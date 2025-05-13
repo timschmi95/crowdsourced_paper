@@ -1,5 +1,4 @@
 import datetime
-from dateutil.parser import parse
 import numpy as np
 import sys
 from pathlib import Path
@@ -14,7 +13,6 @@ from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 import matplotlib.pyplot as plt
 from matplotlib import colors, cm
 from pyproj import Transformer
-from scipy.signal import convolve
 from scipy.spatial import cKDTree
 
 from climada import CONFIG
@@ -232,7 +230,6 @@ def plot_crowd(meas_crowd,dpi=200,relief=True,figsize=(11,10),fig_ax=None,
         fig, ax = setup_crowd_plot(dpi=dpi,relief=relief,figsize=figsize)
 
     fs = 14
-    nudge = 0.05
 
     # Prepare plotting of crowdsourced data
     if cmap is None:
@@ -288,61 +285,6 @@ def plot_crowd(meas_crowd,dpi=200,relief=True,figsize=(11,10),fig_ax=None,
 
     plt.title('')
     return fig, ax
-
-def plot_crowd_date(date:str,processed:bool=False,dpi:int=200,relief:bool=True,
-                    figsize:tuple=(11,10),fig_ax=None,gridlines:bool=True,zorder=4,cmap=None):
-    """plot corwd sourced data for a given date
-
-    Args:
-        date (str): date
-        processed (bool, optional): Wheter to use locally saved processed data,
-        or download raw data. Defaults to False.
-        dpi (int, optional): Figure DPI. Defaults to 200.
-        relief (bool, optional): Whether to plot a relief. Defaults to True.
-        figsize (tuple, optional): Figure size. Defaults to (11,10).
-        fig_ax (tuple, optional): Tuple of figure and axes object. Defaults to None.
-
-
-    Returns:
-        fig, ax (tuple): Figure and axes object
-    """
-    sel_day = datetime.datetime.strptime(date, '%Y-%m-%d')
-
-    if processed:
-        assert(sel_day<=datetime.datetime(2021,12,31))
-        data_dir = 'C:/Users/timschmi/Documents/PhD/data/'
-        file_crowd = 'crowd-source/Reports_20150512_20220901_filtered.csv'
-        crowd_data = pd.read_csv(data_dir + file_crowd,
-                                 dtype={'ID':str, 'x':int, 'y':int, 'size':int, 'CustomTime':str,
-                                    'CustomLocation':str, 'OsVersion':str, 'AppVersion':str,
-                                    'Language':str, 'EventDate':int, 'maxCZC':float,
-                                    'CZCfilteredout':int, 'TDiff':float, 'SubvsEventbad':int,
-                                    'Multi1':int, 'Multi2':int, 'Multi3':int,
-                                    'blacklisted':int, 'xr':int, 'yr':int,
-                                    'FILTEREDOUT':int})
-
-        crowd_data=process_crowd_data(crowd_data)
-        crowd_filtered = crowd_data[(crowd_data['size'].isin(np.arange(11,17))) &
-                                    (crowd_data['FILTEREDOUT'] == 0)]
-        #select date
-        date_plot = sel_day.strftime("%Y-%m-%d")
-        date_crowd = pd.to_datetime(date_plot).date()
-        crowd_sel_day = crowd_filtered.loc[crowd_filtered['hailday']==date_crowd]
-    else:
-        #download crowd-sourced data from MCH server
-        tmr = sel_day + datetime.timedelta(days=2)
-        sel_day_str = sel_day.strftime("%Y-%m-%d")
-        tmr_str = tmr.strftime("%Y-%m-%d")
-        crowd_sel_day = pd.read_csv(f'{crowd_url}?start={sel_day_str}&end={tmr_str}')
-        crowd_sel_day=sc.process_crowd_data(crowd_sel_day,processed=False)
-
-    meas_crowd = crowd_sel_day.loc[crowd_sel_day['hailday']==sel_day.date()]
-    meas_crowd = meas_crowd.sort_values('size')
-
-    fig,ax=plot_crowd(meas_crowd,dpi=dpi,relief=relief,figsize=figsize,
-                      fig_ax=fig_ax,gridlines=gridlines,zorder=zorder,cmap=cmap)
-    return fig, ax
-
 
 #%%
 
