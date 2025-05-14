@@ -1,6 +1,6 @@
 # Improved real-time hail damage estimates leveraging dense crowdsourced observations
 The scripts here reproduce the main results of the paper:
-Schmid T., Gebhart, V., Bresch D. N. (2025) Improved real-time hail damage estimates leveraging dense crowdsourced observations. Meteorological Applications, DOI to be added
+Schmid T., Gebhart, V., Bresch D. N. (2025) Improved real-time hail damage estimates leveraging dense crowdsourced observations. Meteorological Applications, [DOI:10.1002/met.70059](https://doi.org/10.1002/met.70059)
 
 
 Publication status: [accepted](https://doi.org/10.1002/met.70059)
